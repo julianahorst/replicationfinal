@@ -1,0 +1,412 @@
+---
+title: Replication of the article "Emerging Parental Gender Indifference? Sex Composition
+  of Children and the Third Birth" From Pollard and Morgan
+author: "Juliana de Oliveira Horst"
+date: "May 11, 2022"
+output:
+  pdf_document:
+    keep_tex: yes
+    fig_caption: yes
+  word_document: default
+  html_document:
+    df_print: paged
+geometry: left=3cm,right=3cm,top=2cm,bottom=2cm
+fontfamily: mathpazo
+fontsize: 12pt
+urlcolor: black
+header-includes:
+- \pagenumbering{arabic}
+- \usepackage{setspace}\doublespacing
+---
+
+
+```{r setup, include=FALSE}
+# This cell contains default chunk options
+# These will be applied to all chunks unless an individual chunk is modified
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(include = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(dev = 'pdf')
+# You may modify this chunk to include additional options
+# For example, there are options that can change the layout for all figures
+# You can also modify the header options above this chunk to change the
+# formatting of the output, but do so at your own risk.
+# This book provides lots of tips for using RMarkdown: https://bookdown.org/yihui/rmarkdown-cookbook/
+```
+
+
+# INTRODUCTION
+
+  In “Emerging Parental Gender Indifference? Sex Composition 
+  of Children and the Third Birth,” Pollard and Morgan’s 
+  central hypothesis is that there has been a transformation
+  in parents’ preferences regarding the sex of their offspring. 
+  According to the authors, because of ruptures in the “gender
+  system” – represented, in this article, mainly by the 
+  gendered division of labor –, parents’ desire to have 
+  at least one child of each sex is declining in the US. This 
+  hypothesis opposes well-established literature pointing 
+  out that parents of two same-sex children are more likely
+  to have (or intend to have) a third child than those that
+  already have one child of each sex (Slone and Lee, 1983; 
+  Yamaguchi and Ferguson, 1995). To build their arguments,
+  the authors developed some Logistic Regressions based on 
+  varying data sources, especially four cycles from the 
+  Current Population Survey (1980,1985, 1990, and 1995) 
+  and three cycles from the National Survey of Family Growth 
+  (1983, 1988, and 1995). 
+  
+  Their models – which had “fertility behavior” and “fertility
+  intention” as their main independent variables– indeed 
+  present a significant decline, after 1985, in the likelihood 
+  of mothers of same-sex children having (fertility behavior) 
+  or intending to have (fertility intention) a third child. 
+  The authors aim to attribute this transformation to the 
+  aforementioned “weakening of the gender system” throughout 
+  the article. To corroborate this explanation, they attempt to
+  falsify other plausible justifications for the phenomenon. 
+  One critical competing hypothesis for the current decline is 
+  the changes in families’ social structure, particularly the 
+  increasing number of single-parent households. 
+  
+  To verify whether the increase in “indifference” toward 
+  the sex of children is related to “non-traditional” family
+  structures or whether it is pervasive, the authors created
+  a more restricted logistic regression model. Model number 
+  three, which I will replicate in this paper, has only two 
+  categories of respondents: “(1) women who were married at 
+  the birth of their second child, and (2) once-married women 
+  who were married at the birth of the first child and remained
+  married until the third birth or censoring” (p. 607). Thus,
+  using the author’s rationale, if a decrease in the influence 
+  of the sex of the first two children on women's intention to 
+  have a third child could be detected in this group, it would 
+  mean the phenomenon is not only linked to non-traditional families.
+  
+  Similar to models one and two, based on data from a larger
+  population, model three also demonstrated a significant decline
+  in the influence of the sex of the first two children on the 
+	intention to have a third child. Thus, the authors' hypothesis 
+	became even more robust. I will replicate and analyze model 
+	three, its assumptions, and findings in the following sections.
+	
+
+
+# REPLICATION
+
+  The authors have made the codes they developed to create 
+  their logistic models widely accessible to the public. As such,
+  the model I replicated is reasonably close to theirs. In the
+  original model three, the authors first created five subsets 
+  from their more extensive database, keeping only the married 
+  women population and their corresponding demographic data. 
+  The five subsets - which they also grouped into a new dataset 
+  (married.ASR) - correspond to the different years the surveys 
+  were conducted, 1982, 1988, 1995, 2002, and 2006.
+  
+  According to my replication, one can notice that the variable 
+  “same-sex children” (“samesexsame-sex”) still has a significant
+  influence on married women’s intention to have a third child (0.48),
+  albeit declining. Two other statistically relevant figures 
+  concern the variable “age,” where increasing age significantly 
+  decreases the prospects of a third child (-0.21), and the 
+  variable “raceHispanics.” In the latter, there is a rather 
+  significant influence of the gender of the first two children 
+  on the intention to have a third child (0.77), which can 
+  suggest a great ethnic-cultural difference between the Hispanic 
+  group and the others.
+  
+  Finally, although less salient, it is also important to
+  mention that there appears to be a positive relationship 
+	between the variable “educatcollege” with the intention of 
+	married women to have a third child. The data suggests that 
+	the gender of the first two children tends to influence (more) 
+	the will of women who went to college to have a third child 
+	(0.42). This information is relevant because, throughout the 
+	article, Pollard and Morgan argue that Yamaguchi and 
+	Ferguson's (1995) findings – that the influence of the 
+	sex of previous children is more substantial in highly 
+	educated women – should not prosper (Pollard and Morgan,
+	p. 607, 2002). However, looking at Pollard and Morgan’s 
+	own data, we need more caution before ruling out this hypothesis. 
+	
+
+```{r data loading, include=FALSE, echo=TRUE, tidy=TRUE}
+rm(list=ls(all=TRUE))
+
+library(foreign)
+library(MASS)
+library(RColorBrewer)
+library(tidyverse)
+library(rstanarm)
+library(modelsummary)
+library(formatR)
+options(tinytex.verbose = TRUE)
+
+# Load data
+wd<-c("C:/Users/julia/OneDrive/Área de Trabalho/Nova pasta")
+setwd(wd)
+data = read.dta("intent.dta")
+ASR = data[which(data$survey==1988 | data$survey==1995),]
+NSFG1982 = data[which(data$survey==1982),]
+NSFG1988 = data[which(data$survey==1988),]   
+NSFG1995 = data[which(data$survey==1995),]
+NSFG2002 = data[which(data$survey==2002),]
+NSFG2006 = data[which(data$survey==2006),]
+```
+
+```{r replication of the original model, include=TRUE, echo=TRUE, tidy=TRUE}
+# m3: currently married sample:  + demographic controls
+  married.ASR = ASR[which(ASR$marital
+                          =="currently married"),]
+  married.1988 = NSFG1988[which(NSFG1988$marital
+                                =="currently married"),]
+  married.1995 = NSFG1995[which(NSFG1995$marital
+                                =="currently married"),]
+  married.1982 = NSFG1982[which(NSFG1982$marital
+                                =="currently married"),]
+  married.2002 = NSFG2002[which(NSFG2002$marital
+                                =="currently married"),]
+  married.2006 = NSFG2006[which(NSFG2006$marital
+                                =="currently married"),]
+  m3 = glm(intent ~ samesex+as.factor(survey)+
+             samesex*as.factor(survey)+age+educat+race, 
+           data=married.ASR,family=binomial(link="logit"))
+  m3.1988 = glm(intent ~ samesex+age+educat+race, 
+                data=married.1988, 
+                family=binomial(link="logit"))
+  m3.1995 = glm(intent ~ samesex+age+educat+race, 
+                data=married.1995,
+                family=binomial(link="logit"))
+  m3.1982 = glm(intent ~ samesex+age+educat+race, 
+                data=married.1982, 
+                family=binomial(link="logit"))
+  m3.2002 = glm(intent ~ samesex+age+educat+race, 
+                data=married.2002, 
+                family=binomial(link="logit"))
+  m3.2006 = glm(intent ~ samesex+age+educat+race, 
+                data=married.2006, 
+                family=binomial(link="logit"))
+    coef.m3 = round(c(coef(m3.1982)[2],
+                      coef(m3.1988)[2],coef(m3.1995)[2],
+                      coef(m3.2002)[2],coef(m3.2006)[2]), 
+                    digits=3)
+    se.m3 = round(c(sqrt(diag(vcov(m3.1982)))[2],
+                  sqrt(diag(vcov(m3.1988)))[2],
+                  sqrt(diag(vcov(m3.1995)))
+                  [2],sqrt(diag(vcov(m3.2002)))[2],
+                  sqrt(diag(vcov(m3.2006)))[2]), 
+                  digits=3)
+    n.m3 = c(m3.1982$df.null+1, m3.1988$df.null+1, 
+             m3.1995$df.null+1,
+             m3.2002$df.null+1, m3.2006$df.null+1)
+    sig.m3 = round(c(summary(m3.1982)$coef[2,4],
+                  summary(m3.1988)$coef[2,4],
+                  summary(m3.1995)$coef[2,4],
+                  summary(m3.2002)$coef[2,4],
+                  summary(m3.2006)$coef[2,4]),
+                  digits=3)
+    summary(m3)
+    modelsummary(list("Initial model" = m3), 
+             statistic = "conf.int",
+             title = "Original replication")
+
+
+```
+# BAYESIAN REPLICATION
+
+  As we can notice, the Bayesian replication presents results
+  that are very similar to the original logistic regression. 
+  The most extensive variation is in the variable “raceother.”
+  In the original model, the value was 0.65, while in the Bayesian
+  replication, this value is 0.57. The higher sensitivity to
+  variation may be linked to a reduced sample size for this 
+  category. However, the other variables present almost 
+  identical results in both models, corroborating how 
+  robust the authors’ findings are.
+  
+
+```{r bayesian replication, include=TRUE, echo=TRUE, tidy=TRUE}
+#Bayesian model for m3
+baym3 <- stan_glm(intent ~ samesex+as.factor(survey)+samesex*as.factor(survey)
+                  +age+educat+race, data=married.ASR,
+                  family=binomial(link="logit"),
+                  prior = normal(location = 0,scale = 1), 
+                  seed = 12345, refresh = 0)
+print(baym3)
+modelsummary(list("Initial model" = m3,
+                  "Bayesian model" = baym3), 
+             statistic = "conf.int",
+             title = "Bayesian Replication for Model 3")
+```
+
+```{r posterior predictive check, include=TRUE, echo=TRUE, tidy=TRUE}
+pp_check(baym3)
+
+```
+# ALTERNATIVE SPECIFICATIONS
+
+  Another way to check how solid the results Pollard and 
+  Morgan obtained were, is to employ sensitivity checks. 
+  Therefore, in this section I propose three alternative 
+  specifications for the replicated model; in the first 
+  one I added a new variable (“catholic”), in the second 
+  I altered the original dataset removing age outliers, and 
+  in the last one, I incorporated the data into a Probit 
+  regression model.  In the first specification, I decided 
+  to add the variable “catholic” because this population 
+  tends to be more prone to accepting gender norms. So, it 
+  would be interesting to see how catholic married women 
+  would perform. As we can notice, after adding this new 
+  variable, most results did not alter significantly compared 
+  to the initial one. This pattern corroborates the authors’ 
+  argument that there is a widespread change regarding parental
+  preference for the sex of their children, even when we observe
+  a group that tends to be more impacted by the socialization and
+  institutionalization of gender roles. 
+  
+  The only significant 
+  variations are caused by the interaction between the 
+  variable “catholic” and the	variables “raceHispanic” and 
+  “raceblack.” The values went from 0.78 (“raceHispanic”) 
+  and 0.06 (“raceblack”) in the	initial specification to 0.5 
+  and 0.18 with the new variable. These discrepancies may 
+  suggest either that there is indeed a sui generis phenomenon 
+  occurring in these groups or that the sample size was small,
+  rendering these categories more susceptible to unrealistic 
+  variation.	
+  
+  In the second alternative specification, when I altered the 
+  original dataset by removing age outliers, the  results found	
+  were also very similar to the initial ones. With  the exception,
+  once again, of categories involving race (now  also including
+  “raceother”). I believe that this consistent discrepancy involving
+  the non-white racial groups points a 
+  lot more to issues in collecting this data than to any other 
+  possible underlying explanation. In that sense, Pollard 
+  and Morgan also state that they were “not able to reject 
+  the hypothesis that the sex-of-previous-children effect was 
+  the same across racial/ethnic groups (results not shown)” 
+  (p. 609), this also corroborates my assumption that there 
+  is a lack of comprehensive data associated with the racial 
+  categories.	
+  
+  Finally, the third scenario was utilizing an 
+  alternative model. Differently from the other two specifications, 
+  the Probit regression model displayed results that are very 
+  dissimilar when compared to the initial logistic model. However,
+  we can notice an important pattern between the two models. 
+  There is a certain proportion between the new values and the
+  previous ones, for the positive outcomes arising from Probit 
+  are (roughly) half of Logit’s outcomes. For instance, when we 
+  observe the variable “educatcollege” it goes from 0.423 in the 
+  Logit to 0.225 in the	Probit; “samesexsame-sex” goes from 0.483 
+  to 0.245; “raceother” goes from 0.657 to 0.375. This pattern
+  might suggest that thefundamental relationships between the
+  variables are maintained in the new model, even if the values 
+  are not. However, it is essential to get more information to 
+  understand further what happened in this part of the 
+  sensitivity checks	mainly because the general expectation is 
+  that Logit and Probit’s results usually	are similar.
+	
+
+
+```{r alternative specifications, include=TRUE, echo=TRUE, tidy=TRUE}
+m3catholic = glm(intent ~ samesex+as.factor(survey)+samesex*as.factor(survey)
+                 +age+educat+race+catholic, 
+                 data=married.ASR,
+                 family=binomial(link="logit")) 
+m3probit = glm(intent ~ samesex+as.factor(survey)+samesex*as.factor(survey)
+               +age+educat+race, 
+               data=married.ASR,
+               family=binomial(link="probit")) 
+married.ASR <- married.ASR %>% 
+  mutate(age = ifelse(age > 
+                        quantile(age, .95, na.rm = T) | 
+                        age < quantile(age, .05, na.rm = T), 
+                      NA, age))
+m3quantile = glm(intent ~ samesex+as.factor(survey)+
+                   samesex*as.factor(survey)
+                 +age+educat+race, data=married.ASR,
+                 family=binomial(link="logit")) 
+modelsummary(list("Initial model" = m3,
+                  "Add Catholic" = m3catholic,
+                  "Probit" = m3probit,
+                  "Transformed data" = m3quantile),
+             title = "Alternative Specifications")
+```
+# DISCUSSION
+
+  The results Pollard and Morgan obtained in this research are 
+  quite robust, remaining virtually unchanged both when transformed 
+  into a Bayesian regression model and when subjected to alternative
+  specifications (apart from the Probit model). So, from a statistical
+  data production standpoint, their outcomes are well supported. 
+  However, the authors’ analysis of the social phenomenon arising 
+  from their results are less impressive and unconvincing. Even if 
+  they are correct and, since 1985, couples in the United States
+  have been increasingly indifferent to having at least one child
+  of each sex. This finding is not synonymous with saying that 
+  there is an increase in parents’ indifference concerning the sex of
+  their children. 
+  
+  To be able to more forcefully state that there 
+  is indeed an increase in parental indifference towards the sex 
+  of their children, it would also be necessary to analyze whether 
+  one sex is still more desired over the other. For example, what
+  percentage of parents would like to have only girls or only
+  boys, what percentage of parents who have their first child a
+  girl decides to have a second child, and vice versa. Sticking 
+  to the influence of the sex of the first two children, it would 
+  be important to inquire how often parents of two girls decide 
+  to have a third child, is it the same as parents of two boys? 
+  
+  Moreover, attributing the new trend they identified to the 
+  attenuation of the “gender system” is rather one-dimensional. After
+  all, gender norms have historically gone through shifts	without 
+  it necessarily resulting from a weakening in this system.
+	Even the advancement of women's rights – such as their incorporation
+	into the labor market pointed out several times in the article
+	– often goes hand in hand with increasing violence against them to
+	reestablish and reinforce gender norms (Faludi, 2006). 
+	
+	To argue 	for some relevant weakening of the patriarchal system,
+	it is necessary that, at the very least, women and men exhibited 
+	changes in behaviors and intentions. However, the population
+	Pollard and Morgan investigated were only composed by 
+	women-mothers. Throughout the article, but especially when 
+	analyzing the data stemming from model number three, the authors 
+	assume a homology between the women’s intentions and those of 
+	their husbands. This equation may be far from reality.
+	
+	Finally, it	was quite interesting to carry out this replication
+	exercise, following the steps of others in producing their 
+	statistical research. The most striking aspect for me was 
+	visualizing how broad a quantitative researcher's decision-making 
+	power is. From deciding which data they will incorporate or ignore,
+	which categories they will create or dissolve, which clusters 
+	they will group or separate, which statistical model is more 
+	interesting to present their results, etc. And how all these 
+	decisions, as small as they may seem, can significantly alter 
+	their outcomes.
+	
+
+
+# REFERENCES
+
+Faludi, Susan. 2006 [1991]. Backlash: The Undeclared War Against 
+American Women. New York: Three Rivers Press. 
+
+Pollard, Michael S. and S. Philip Morgan. 2002. “Emerging 
+parental gender indifference? Sex composition of children and 
+the third birth.” American Sociological Review 67: 600-613.
+
+Sloane, Douglas M. and Che-Fu Lee. 1983. “Sex of previous children
+and intentions for further births in the United States, 
+1965-1976.” Demography 20: 353-367.
+
+Yamaguchi, Kazuo and Linda R. Ferguson. 1995. “The stopping and 
+spacing of childbirths and their birth-history predictors: 
+rational-choice theory and event-history analysis.” American 
+Sociological Review 60: 272-298.
